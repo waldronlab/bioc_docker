@@ -1,6 +1,6 @@
 #!/bin/bash
 
-$version=1
+version=$1
 
 if [ -z "${version// }" ] || [ $version != "release" -a $version != "devel" ]; then
     echo "Enter either 'devel' or 'release' version"
