@@ -117,7 +117,7 @@ RUN apt-get update \
 RUN cd /tmp \
 	## libsbml
 	&& curl -O https://s3.amazonaws.com/linux-provisioning/libSBML-5.10.2-core-src.tar.gz \
-	&& tar zxf libSBML-5.10.2-core-src.tar.gz \
+	&& tar zxvf libSBML-5.10.2-core-src.tar.gz \
 	&& cd libsbml-5.10.2 \
 	&& ./configure --enable-layout \
 	&& make \
