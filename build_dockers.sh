@@ -11,4 +11,4 @@ waldronIMG=waldronlab/bioc_docker:"$version"
 
 docker image build \
     --build-arg VERSION=${version} \
-    -t $waldronIMG dockerfiles/Dockerfile_Bioc
+    -t $waldronIMG -f ./dockerfiles/Dockerfile_Bioc .
