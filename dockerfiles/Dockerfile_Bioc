@@ -1,5 +1,3 @@
-ARG VERSION
-
 FROM rockerdev/r-ver:4.0.0-ubuntu18.04
 
 # nuke cache dirs before installing pkgs; tip from Dirk E fixes broken img
@@ -25,7 +23,6 @@ RUN apt-get update \
 	liblzma-dev \
 	libbz2-dev \
 	libpng-dev \
-	libmariadb-dev-compat \
 	## sys deps from bioc_full
 	pkg-config \
 	fortran77-compiler \
@@ -34,14 +31,16 @@ RUN apt-get update \
 	curl \
 	## This section installs libraries
 	libpng-dev \
+    libpcre2-dev \
 	libnetcdf-dev \
 	libhdf5-serial-dev \
 	libfftw3-dev \
 	libopenbabel-dev \
 	libopenmpi-dev \
-	# libexempi8 \
-    libexempi-dev \
 	libxt-dev \
+    libudunits2-dev \
+	libgeos-dev \
+	libproj-dev \
     libhdf4-alt-dev \
 	libcairo2-dev \
 	libtiff5-dev \
@@ -60,15 +59,14 @@ RUN apt-get update \
 	libv8-dev \
 	libgtkmm-2.4-dev \
 	libmpfr-dev \
-	libudunits2-dev \
 	libmodule-build-perl \
 	libapparmor-dev \
-	libgeos-dev \
+    libraptor2-dev \
+    librasqal3-dev \
 	libprotoc-dev \
 	librdf0-dev \
 	libmagick++-dev \
 	libsasl2-dev \
-    libssl-dev \
 	libpoppler-cpp-dev \
 	libprotobuf-dev \
 	libpq-dev \
@@ -98,18 +96,46 @@ RUN apt-get update \
 	xfonts-100dpi \
 	xfonts-75dpi \
 	biber \
+    ## From RStudio
+    git \
+    libapparmor1 \
+    libclang-dev \
+#    libcurl4-openssl-dev \ # conflict w/ below
+    libcurl4-gnutls-dev \
+    libssl-dev \
+    psmisc \
+    sudo \
+    wget \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
 ## Python installations
 RUN apt-get update \
-	&& apt-get -y install python-dev python-setuptools \
+	&& apt-get -y --no-install-recommends install python-dev python-setuptools \
 	&& pip install wheel \
 	## Install sklearn and pandas on python
 	&& pip install sklearn \
 	pandas \
 	pyyaml \
 	cwltool \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists/*
+
+## FIXME
+## These two libraries don't install in the above section--WHY?
+RUN apt-get update \
+	&& apt-get -y --no-install-recommends install \
+	libmariadb-dev-compat \
+	libjpeg-dev \
+	libjpeg-turbo8-dev \
+	libjpeg8-dev \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists/*
+
+## FIXME
+RUN apt-get update \
+	&& apt-get -y --no-install-recommends install \
+	libgdal-dev \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
 
@@ -139,9 +165,17 @@ COPY ./deps/xvfb_init /etc/services.d/xvfb/run
 RUN echo "R_LIBS=/usr/local/lib/R/host-site-library:\${R_LIBS}" > /usr/local/lib/R/etc/Renviron.site \
 	&& echo "options(defaultPackages=c(getOption('defaultPackages'),'BiocManager'))" >> /usr/local/lib/R/etc/Rprofile.site
 
-ADD install.R /tmp/
+# ADD install_devel.R /tmp/
+ADD install_release.R /tmp/
 
-RUN R -f /tmp/install_${VERSION}.R
+# RUN R -f /tmp/install_devel.R
+RUN R -f /tmp/install_release.R
 
+# DEVEL: Add sys env variables to DEVEL image
+RUN curl -O http://bioconductor.org/checkResults/devel/bioc-LATEST/Renviron.bioc \
+	&& cat Renviron.bioc | grep -o '^[^#]*' | sed 's/export //g' >>/etc/environment \
+	&& cat Renviron.bioc >> /usr/local/lib/R/etc/Renviron.site \
+	&& rm -rf Renviron.bioc
+
+# Init command for s6-overlay
 CMD ["/init"]
-
